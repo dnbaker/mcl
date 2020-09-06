@@ -1,4 +1,4 @@
 ## MCL: Simple implementation of the Markov Clustering Algorithm
 
-
-See https://micans.org/mcl/ for details.
+This is not complete, does not compile, and will not work.
+Otherwise, see https://micans.org/mcl/ for details.
