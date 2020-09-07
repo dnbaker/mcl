@@ -9,7 +9,7 @@ struct MCLSettings {
     double mult_    = 1.;
     long unsigned niter_ = 1000;
     double selfloop_inc_ = 1;
-    double threshold_ = 1e-9; // Values < this are set to 0 at each iteration
+    //double threshold_ = 1e-9; // Values < this are set to 0 at each iteration
 };
 
 template<typename MT, bool SO>
@@ -18,9 +18,8 @@ void mcl(blaze::Matrix<MT, SO> &matrix, MCLSettings settings) {
     // Add diagonal, if selected
     if(settings.selfloop_inc_ != 0.) {
         if constexpr(blaze::IsDenseMatrix_v<MT>) {
-            band(~matrix, 0 += settings.selfloop_inc_);
+            band(~matrix, 0) += settings.selfloop_inc_;
         } else {
-            OMP_PFOR
             for(unsigned i = 0; i < (~matrix).rows(); ++i) {
                 auto r = row(~matrix, i, unchecked);
                 auto it = r.find(i);
@@ -31,7 +30,7 @@ void mcl(blaze::Matrix<MT, SO> &matrix, MCLSettings settings) {
             }
         }
     }
-    blaze::DenseMatrix<FT> isums;
+    blaze::DynamicVector<FT> isums;
     auto normalize = [&matrix,&isums]() {
         isums = 1. / blaze::sum<blaze::rowwise>(~matrix);
         ~matrix %= blaze::expand(isums, (~matrix).rows());
@@ -44,13 +43,8 @@ void mcl(blaze::Matrix<MT, SO> &matrix, MCLSettings settings) {
         normalize();
         // expand
         ~matrix *= ~matrix;
-        if(settings.threshold_ != 0.) {
-            // prune small values
-           ~matrix = clamp(~matrix, settings.threshold_, std::numeric_limits<FT>::max());
-        }
-        if(++iter == settings.niter_) break;
-        if(max(pow(~matrix, 2.) - ~matrix) - min(pow(~matrix, 2.) - ~matrix) <= settings.tol_)
-            break;
+        
+        if(++niter == settings.niter_) break;
     }
     // TODO: emit clusters and terminate
 }
